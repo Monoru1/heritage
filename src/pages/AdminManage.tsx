@@ -1,87 +1,46 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AdminCrud from "@/pages/AdminCrud";
 import { useAuth } from "@/hooks/useAuth";
-import { BarChart3, CalendarDays, ChefHat, Clock, LayoutGrid, Loader2, LogOut } from "lucide-react";
+import { useAdminReservations, useReservationStats, useUpdateReservationStatus } from "@/hooks/useAdmin";
+import { cn, formatTime } from "@/lib/utils";
+import { toast } from "@/components/ui/Toast";
+import type { ReservationStatus } from "@/types/database";
+import { BarChart3, CalendarDays, Check, ChefHat, Clock, LayoutGrid, Loader2, LogOut, Search, Users, X } from "lucide-react";
 
-type AdminSection = "menu" | "gallery" | "tables" | "availability";
+type AdminSection = "reservations" | "menu" | "gallery" | "tables" | "availability" | "stats";
+type CrudSection = "menu" | "gallery" | "tables" | "availability";
 
-const sections: { id: AdminSection; label: string; icon: typeof ChefHat; description: string }[] = [
+const statusLabels: Record<ReservationStatus, string> = { pending: "En attente", confirmed: "Confirmée", seated: "En salle", cancelled: "Annulée", no_show: "Absent" };
+const statusClass: Record<ReservationStatus, string> = { pending: "border-yellow-500/30 text-yellow-300 bg-yellow-500/10", confirmed: "border-emerald-500/30 text-emerald-300 bg-emerald-500/10", seated: "border-blue-500/30 text-blue-300 bg-blue-500/10", cancelled: "border-red-500/30 text-red-300 bg-red-500/10", no_show: "border-pierre/20 text-pierre/50 bg-pierre/10" };
+const sections = [
+  { id: "reservations", label: "Réservations", icon: CalendarDays, description: "Demandes clients, confirmations et annulations." },
   { id: "menu", label: "Carte", icon: ChefHat, description: "Ajouter ou modifier les plats, prix et images." },
   { id: "gallery", label: "Galerie", icon: CalendarDays, description: "Mettre à jour les photos du restaurant." },
   { id: "tables", label: "Tables", icon: LayoutGrid, description: "Capacité, salle, terrasse et tables actives." },
   { id: "availability", label: "Disponibilités", icon: Clock, description: "Gérer les créneaux ouverts à la réservation." },
-];
+  { id: "stats", label: "Statistiques", icon: BarChart3, description: "Vue rapide de l’activité." },
+] as const;
 
 function LoginBox({ onLogin }: { onLogin: (email: string, password: string) => Promise<{ error: unknown }> }) {
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    const form = new FormData(e.currentTarget);
-    const { error } = await onLogin(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
-    if (error) setError("Identifiants incorrects.");
-    setBusy(false);
-  }
-
-  return (
-    <div className="min-h-screen bg-void text-creme flex items-center justify-center px-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-md border border-pierre/10 bg-void-light p-8 shadow-2xl shadow-black/40">
-        <p className="text-or text-[10px] uppercase tracking-[0.32em] mb-3">Héritage</p>
-        <h1 className="font-display text-4xl mb-2">Administration</h1>
-        <p className="text-pierre/45 text-sm mb-8 leading-relaxed">Connectez-vous pour gérer le restaurant depuis une seule interface.</p>
-        <input name="email" type="email" placeholder="Email" className="w-full bg-void border border-pierre/15 px-4 py-3 mb-3 text-sm outline-none focus:border-or" required />
-        <input name="password" type="password" placeholder="Mot de passe" className="w-full bg-void border border-pierre/15 px-4 py-3 mb-4 text-sm outline-none focus:border-or" required />
-        {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-        <button disabled={busy} className="w-full bg-or text-void py-3 text-xs uppercase tracking-[0.18em] font-medium disabled:opacity-60 flex items-center justify-center gap-2">
-          {busy && <Loader2 size={14} className="animate-spin" />} Se connecter
-        </button>
-      </form>
-    </div>
-  );
+  const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) { e.preventDefault(); setBusy(true); setError(""); const f = new FormData(e.currentTarget); const r = await onLogin(String(f.get("email") ?? ""), String(f.get("password") ?? "")); if (r.error) setError("Identifiants incorrects."); setBusy(false); }
+  return <div className="min-h-screen bg-void text-creme flex items-center justify-center px-6"><form onSubmit={handleSubmit} className="w-full max-w-md border border-pierre/10 bg-void-light p-8 shadow-2xl shadow-black/40"><p className="text-or text-[10px] uppercase tracking-[0.32em] mb-3">Héritage</p><h1 className="font-display text-4xl mb-2">Administration</h1><p className="text-pierre/45 text-sm mb-8 leading-relaxed">Connectez-vous pour gérer le restaurant depuis une seule interface.</p><input name="email" type="email" placeholder="Email" className="w-full bg-void border border-pierre/15 px-4 py-3 mb-3 text-sm outline-none focus:border-or" required/><input name="password" type="password" placeholder="Mot de passe" className="w-full bg-void border border-pierre/15 px-4 py-3 mb-4 text-sm outline-none focus:border-or" required/>{error && <p className="text-red-400 text-sm mb-4">{error}</p>}<button disabled={busy} className="w-full bg-or text-void py-3 text-xs uppercase tracking-[0.18em] font-medium disabled:opacity-60 flex items-center justify-center gap-2">{busy && <Loader2 size={14} className="animate-spin"/>} Se connecter</button></form></div>;
 }
 
+function ReservationsVisual() {
+  const { data, isLoading } = useAdminReservations(); const update = useUpdateReservationStatus(); const [q,setQ]=useState(""); const [filter,setFilter]=useState<ReservationStatus|"all">("all");
+  const rows = useMemo(()=> (data??[]).filter(r => (!q || `${r.first_name} ${r.last_name} ${r.email} ${r.phone}`.toLowerCase().includes(q.toLowerCase())) && (filter==="all" || r.status===filter)),[data,q,filter]);
+  const today = new Date().toISOString().slice(0,10); const stats = { total:(data??[]).length, today:(data??[]).filter(r=>r.reservation_date===today).length, pending:(data??[]).filter(r=>r.status==="pending").length, guests:(data??[]).reduce((s,r)=>s+Number(r.guests??0),0) };
+  async function change(id:string,status:ReservationStatus){ try{ await update.mutateAsync({id,status}); toast("Réservation mise à jour","success"); }catch{ toast("Erreur réservation","error"); } }
+  if(isLoading) return <div className="py-16 flex justify-center"><Loader2 className="animate-spin text-or"/></div>;
+  return <div className="space-y-6"><div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4"><div><p className="text-or text-[10px] uppercase tracking-[0.28em] mb-2">Accueil admin</p><h2 className="font-display text-4xl">Réservations</h2><p className="text-pierre/45 text-sm mt-2">Vue opérationnelle des demandes clients.</p></div></div><div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">{[["Total",stats.total],["Aujourd’hui",stats.today],["En attente",stats.pending],["Couverts",stats.guests]].map(([k,v])=><div key={k} className="border border-pierre/10 bg-void-light p-4"><p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em]">{k}</p><p className="font-display text-3xl mt-2">{v}</p></div>)}</div><div className="grid md:grid-cols-[1fr_220px] gap-3"><div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-pierre/30"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un client, email, téléphone..." className="w-full bg-void border border-pierre/15 pl-11 pr-4 py-3 text-sm outline-none focus:border-or/60"/></div><select value={filter} onChange={e=>setFilter(e.target.value as ReservationStatus|"all")} className="bg-void border border-pierre/15 px-4 py-3 text-sm outline-none focus:border-or/60"><option value="all">Tous les statuts</option>{Object.entries(statusLabels).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></div><div className="grid xl:grid-cols-2 gap-4">{rows.map(r=><div key={r.id} className="border border-pierre/10 bg-void-light p-5"><div className="flex justify-between gap-4"><div><h3 className="font-display text-2xl">{r.first_name} {r.last_name}</h3><p className="text-pierre/45 text-sm">{r.email}</p><p className="text-pierre/35 text-xs">{r.phone}</p></div><span className={cn("h-fit border px-2 py-1 text-[10px] uppercase tracking-[0.14em]",statusClass[r.status])}>{statusLabels[r.status]}</span></div><div className="grid grid-cols-3 gap-3 mt-5 text-sm"><div><p className="text-pierre/35 text-[10px] uppercase">Date</p><p>{new Date(r.reservation_date).toLocaleDateString("fr-FR")}</p></div><div><p className="text-pierre/35 text-[10px] uppercase">Heure</p><p>{formatTime(r.reservation_time)}</p></div><div><p className="text-pierre/35 text-[10px] uppercase">Couverts</p><p>{r.guests}</p></div></div>{r.notes && <p className="mt-4 border-l border-or/30 pl-3 text-pierre/50 text-sm">{r.notes}</p>}<div className="flex gap-2 mt-5"><button onClick={()=>change(r.id,"confirmed")} className="flex-1 border border-emerald-500/20 text-emerald-300 py-2 text-xs uppercase tracking-wider hover:bg-emerald-500/10"><Check size={13} className="inline mr-1"/>Confirmer</button><button onClick={()=>change(r.id,"seated")} className="flex-1 border border-blue-500/20 text-blue-300 py-2 text-xs uppercase tracking-wider hover:bg-blue-500/10"><Users size={13} className="inline mr-1"/>En salle</button><button onClick={()=>change(r.id,"cancelled")} className="px-4 border border-red-500/20 text-red-300 hover:bg-red-500/10"><X size={14}/></button></div></div>)}</div>{rows.length===0 && <div className="border border-pierre/10 bg-void-light p-10 text-center text-pierre/40">Aucune réservation trouvée.</div>}</div>;
+}
+
+function StatsPanel(){ const {data}=useReservationStats(); const total=(data??[]).length; const guests=(data??[]).reduce((s,r)=>s+Number(r.guests??0),0); return <div><p className="text-or text-[10px] uppercase tracking-[0.28em] mb-2">Pilotage</p><h2 className="font-display text-4xl mb-6">Statistiques</h2><div className="grid sm:grid-cols-2 gap-4"><div className="border border-pierre/10 bg-void-light p-5"><p className="text-pierre/40 text-xs uppercase">Réservations</p><p className="font-display text-4xl mt-3">{total}</p></div><div className="border border-pierre/10 bg-void-light p-5"><p className="text-pierre/40 text-xs uppercase">Couverts</p><p className="font-display text-4xl mt-3">{guests}</p></div></div></div>; }
+
 export default function AdminManage() {
-  const { user, loading, signIn, signOut } = useAuth();
-  const [section, setSection] = useState<AdminSection>("tables");
-
-  if (loading) return <div className="min-h-screen bg-void flex items-center justify-center"><Loader2 className="animate-spin text-or" /></div>;
-  if (!user) return <LoginBox onLogin={signIn} />;
-
-  return (
-    <div className="min-h-screen bg-void text-creme">
-      <header className="border-b border-pierre/10 bg-void-light/95 sticky top-0 z-40 backdrop-blur">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-or text-[10px] uppercase tracking-[0.28em]">Administration privée</p>
-            <h1 className="font-display text-2xl sm:text-3xl">Héritage — Gestion restaurant</h1>
-          </div>
-          <button onClick={signOut} className="flex items-center gap-2 text-pierre/50 hover:text-red-400 text-sm shrink-0"><LogOut size={16} /> Déconnexion</button>
-        </div>
-      </header>
-
-      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
-        <div className="grid xl:grid-cols-[300px_1fr] gap-8">
-          <aside className="space-y-3">
-            <div className="border border-or/20 bg-or/5 p-5">
-              <div className="flex items-center gap-3 mb-3"><BarChart3 size={18} className="text-or" /><h2 className="font-display text-xl">Centre de contrôle</h2></div>
-              <p className="text-pierre/50 text-sm leading-relaxed">Tout l’admin au même endroit : carte, galerie, tables et créneaux.</p>
-            </div>
-            {sections.map(({ id, label, icon: Icon, description }) => (
-              <button key={id} onClick={() => setSection(id)} className={`w-full text-left border p-4 transition-colors ${section === id ? "border-or bg-or/5 text-or" : "border-pierre/10 bg-void-light/60 text-pierre/55 hover:text-creme hover:border-pierre/20"}`}>
-                <div className="flex items-center gap-3 mb-1"><Icon size={16} /><span className="text-sm uppercase tracking-[0.16em]">{label}</span></div>
-                <p className="text-xs text-pierre/40 leading-relaxed">{description}</p>
-              </button>
-            ))}
-          </aside>
-
-          <section className="min-w-0 overflow-hidden border border-pierre/10 bg-black/15 p-4 sm:p-6">
-            <AdminCrud initialTab={section} externalTab={section} onTabChange={setSection} />
-          </section>
-        </div>
-      </main>
-    </div>
-  );
+  const { user, loading, signIn, signOut } = useAuth(); const [section,setSection]=useState<AdminSection>("reservations");
+  if(loading) return <div className="min-h-screen bg-void flex items-center justify-center"><Loader2 className="animate-spin text-or"/></div>; if(!user) return <LoginBox onLogin={signIn}/>;
+  const crud = ["menu","gallery","tables","availability"].includes(section);
+  return <div className="min-h-screen bg-void text-creme"><header className="border-b border-pierre/10 bg-void-light/95 sticky top-0 z-40 backdrop-blur"><div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4"><div><p className="text-or text-[10px] uppercase tracking-[0.28em]">Administration privée</p><h1 className="font-display text-2xl sm:text-3xl">Héritage — Gestion restaurant</h1></div><button onClick={signOut} className="flex items-center gap-2 text-pierre/50 hover:text-red-400 text-sm shrink-0"><LogOut size={16}/> Déconnexion</button></div><div className="max-w-[1600px] mx-auto px-4 sm:px-6 pb-4 flex gap-2 overflow-x-auto">{sections.map(({id,label})=><button key={id} onClick={()=>setSection(id)} className={`px-4 py-2 border text-[10px] uppercase tracking-[0.15em] whitespace-nowrap ${section===id?"border-or text-or bg-or/5":"border-pierre/10 text-pierre/45 hover:text-creme"}`}>{label}</button>)}</div></header><main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8"><div className="grid xl:grid-cols-[300px_1fr] gap-8"><aside className="space-y-3">{sections.map(({id,label,icon:Icon,description})=><button key={id} onClick={()=>setSection(id)} className={`w-full text-left border p-4 transition-colors ${section===id?"border-or bg-or/5 text-or":"border-pierre/10 bg-void-light/60 text-pierre/55 hover:text-creme hover:border-pierre/20"}`}><div className="flex items-center gap-3 mb-1"><Icon size={16}/><span className="text-sm uppercase tracking-[0.16em]">{label}</span></div><p className="text-xs text-pierre/40 leading-relaxed">{description}</p></button>)}</aside><section className="min-w-0 overflow-hidden border border-pierre/10 bg-black/15 p-4 sm:p-6">{section==="reservations"&&<ReservationsVisual/>}{crud&&<AdminCrud initialTab={section as CrudSection} externalTab={section as CrudSection} onTabChange={(t)=>setSection(t)}/>} {section==="stats"&&<StatsPanel/>}</section></div></main></div>;
 }
