@@ -1,71 +1,46 @@
 @import "tailwindcss";
 
 /* ============================================================
-   HÉRITAGE — Design System
-   Gastronomie provençale · Luxe discret · Terroir
+   HÉRITAGE — Design System v2
    ============================================================ */
 
 @theme {
-  /* Palette — warm Mediterranean stone & earth */
-  --color-void: #08080A;
-  --color-void-light: #111113;
-  --color-creme: #F5F0E6;
-  --color-creme-dark: #E8E0D0;
-  --color-pierre: #C4B5A0;
-  --color-olive: #6B7B5E;
+  --color-void:        #08080A;
+  --color-void-light:  #111113;
+  --color-void-mid:    #18181B;
+  --color-creme:       #F5F0E6;
+  --color-creme-dark:  #E8E0D0;
+  --color-pierre:      #C4B5A0;
+  --color-olive:       #6B7B5E;
   --color-olive-light: #8A9B7A;
-  --color-or: #B8976A;
-  --color-or-light: #D4B88C;
-  --color-warm: #8B7355;
-  --color-error: #A04040;
+  --color-or:          #B8976A;
+  --color-or-light:    #D4B88C;
+  --color-warm:        #8B7355;
+  --color-error:       #C0544A;
+  --color-success:     #4A8C5C;
 
-  /* Typography scale */
   --font-display: "Playfair Display", "Georgia", serif;
-  --font-body: "DM Sans", "Helvetica Neue", sans-serif;
-
-  /* Spacing rhythm */
-  --spacing-section: 8rem;
-  --spacing-section-sm: 5rem;
-
-  /* Easing */
-  --ease-luxury: cubic-bezier(0.25, 0.1, 0.25, 1);
-
-  /* Animations */
-  --animate-fade-up: fade-up 0.8s var(--ease-luxury) both;
-  --animate-fade-in: fade-in 0.6s var(--ease-luxury) both;
-}
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  --font-body:    "DM Sans", "Helvetica Neue", sans-serif;
 }
 
 /* ---- Base ---- */
 @layer base {
-  @font-face {
-    font-family: "Playfair Display";
-    font-style: normal;
-    font-weight: 400 900;
-    font-display: swap;
-    src: url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   body {
     font-family: var(--font-body);
     background-color: var(--color-void);
     color: var(--color-creme);
-    line-height: 1.6;
+    line-height: 1.65;
     overflow-x: hidden;
+    min-width: 320px;
   }
 
   ::selection {
@@ -73,26 +48,56 @@
     color: var(--color-void);
   }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: var(--color-void); }
-  ::-webkit-scrollbar-thumb { background: var(--color-pierre); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--color-pierre)/40; border-radius: 3px; }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     font-weight: 400;
-    line-height: 1.15;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+  }
+
+  img { max-width: 100%; display: block; }
+
+  input, textarea, select {
+    font-family: var(--font-body);
+    border-radius: 0;
+    -webkit-appearance: none;
   }
 }
 
-/* ---- Utilities ---- */
-@utility text-balance {
-  text-wrap: balance;
+/* ---- Keyframes ---- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@utility gold-line {
-  content: "";
-  display: block;
-  width: 3rem;
-  height: 1px;
-  background: var(--color-or);
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse-or {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ---- Utilities ---- */
+@utility text-balance { text-wrap: balance; }
+
+@utility spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-or) 30%, transparent);
+  border-top-color: var(--color-or);
+  border-radius: 9999px;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Toast */
+@utility toast-enter {
+  animation: fade-up 0.3s ease both;
 }

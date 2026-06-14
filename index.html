@@ -3,9 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HÉRITAGE — Restaurant Gastronomique · Sud de la France</title>
-    <meta name="description" content="HÉRITAGE — L'âme du Sud de la France dans chaque assiette. Restaurant gastronomique, cuisine provençale d'exception." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Primary -->
+    <title>HÉRITAGE — Restaurant Gastronomique · Aix-en-Provence</title>
+    <meta name="description" content="HÉRITAGE, restaurant gastronomique au cœur de la Provence. Cuisine du terroir, produits locaux, vue sur les collines d'Aix-en-Provence. Réservation en ligne." />
+    <meta name="theme-color" content="#08080A" />
+
+    <!-- OpenGraph -->
+    <meta property="og:type"        content="restaurant" />
+    <meta property="og:title"       content="HÉRITAGE — Restaurant Gastronomique · Aix-en-Provence" />
+    <meta property="og:description" content="L'âme du Sud de la France dans chaque assiette. Cuisine provençale d'exception, produits du terroir, vue sur les collines." />
+    <meta property="og:url"         content="https://heritage-restaurant.netlify.app" />
+    <meta property="og:image"       content="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80" />
+    <meta property="og:locale"      content="fr_FR" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="HÉRITAGE — Restaurant Gastronomique" />
+    <meta name="twitter:description" content="L'âme du Sud de la France dans chaque assiette." />
+    <meta name="twitter:image"       content="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80" />
+
+    <!-- Schema.org Restaurant -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      "name": "HÉRITAGE",
+      "description": "Restaurant gastronomique provençal au cœur d'Aix-en-Provence.",
+      "url": "https://heritage-restaurant.netlify.app",
+      "image": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80",
+      "telephone": "+33442000000",
+      "email": "contact@heritage-restaurant.fr",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "237 Chemin des Collines",
+        "addressLocality": "Aix-en-Provence",
+        "postalCode": "13100",
+        "addressCountry": "FR"
+      },
+      "geo": { "@type": "GeoCoordinates", "latitude": 43.5297, "longitude": 5.4474 },
+      "servesCuisine": ["Provençale", "Gastronomique", "Française"],
+      "priceRange": "€€€",
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Wednesday","Thursday","Friday","Saturday","Sunday"], "opens": "12:00", "closes": "14:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Wednesday","Thursday","Friday","Saturday","Sunday"], "opens": "19:30", "closes": "22:00" }
+      ],
+      "hasMap": "https://maps.google.com/?q=Aix-en-Provence"
+    }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
