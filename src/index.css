@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* ============================================================
+   HÉRITAGE — Design System
+   Gastronomie provençale · Luxe discret · Terroir
+   ============================================================ */
+
+@theme {
+  /* Palette — warm Mediterranean stone & earth */
+  --color-void: #08080A;
+  --color-void-light: #111113;
+  --color-creme: #F5F0E6;
+  --color-creme-dark: #E8E0D0;
+  --color-pierre: #C4B5A0;
+  --color-olive: #6B7B5E;
+  --color-olive-light: #8A9B7A;
+  --color-or: #B8976A;
+  --color-or-light: #D4B88C;
+  --color-warm: #8B7355;
+  --color-error: #A04040;
+
+  /* Typography scale */
+  --font-display: "Playfair Display", "Georgia", serif;
+  --font-body: "DM Sans", "Helvetica Neue", sans-serif;
+
+  /* Spacing rhythm */
+  --spacing-section: 8rem;
+  --spacing-section-sm: 5rem;
+
+  /* Easing */
+  --ease-luxury: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Animations */
+  --animate-fade-up: fade-up 0.8s var(--ease-luxury) both;
+  --animate-fade-in: fade-in 0.6s var(--ease-luxury) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---- Base ---- */
+@layer base {
+  @font-face {
+    font-family: "Playfair Display";
+    font-style: normal;
+    font-weight: 400 900;
+    font-display: swap;
+    src: url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-void);
+    color: var(--color-creme);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: var(--color-or);
+    color: var(--color-void);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-void); }
+  ::-webkit-scrollbar-thumb { background: var(--color-pierre); border-radius: 3px; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+}
+
+/* ---- Utilities ---- */
+@utility text-balance {
+  text-wrap: balance;
+}
+@utility gold-line {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 1px;
+  background: var(--color-or);
+}
