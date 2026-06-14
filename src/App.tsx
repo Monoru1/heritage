@@ -9,8 +9,7 @@ const MenuPage    = lazy(() => import("@/pages/Menu"));
 const Galerie     = lazy(() => import("@/pages/Galerie"));
 const Reservation = lazy(() => import("@/pages/Reservation"));
 const Contact     = lazy(() => import("@/pages/Contact"));
-const Admin       = lazy(() => import("@/pages/Admin"));
-const AdminManage = lazy(() => import("@/pages/AdminManage"));
+const Admin       = lazy(() => import("@/pages/AdminManage"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -60,16 +59,15 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/"           element={<Home />} />
-            <Route path="/histoire"   element={<Histoire />} />
-            <Route path="/menu"       element={<MenuPage />} />
-            <Route path="/galerie"    element={<Galerie />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/histoire" element={<Histoire />} />
+            <Route path="/menu" element={<MenuPage />} />
+            <Route path="/galerie" element={<Galerie />} />
             <Route path="/reservation" element={<Reservation />} />
-            <Route path="/contact"    element={<Contact />} />
-            <Route path="*"           element={<NotFound />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
           <Route path="/admin/*" element={<Admin />} />
-          <Route path="/admin-manage" element={<AdminManage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
