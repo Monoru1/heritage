@@ -10,6 +10,7 @@ const Galerie     = lazy(() => import("@/pages/Galerie"));
 const Reservation = lazy(() => import("@/pages/Reservation"));
 const Contact     = lazy(() => import("@/pages/Contact"));
 const Admin       = lazy(() => import("@/pages/Admin"));
+const AdminManage = lazy(() => import("@/pages/AdminManage"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="*"           element={<NotFound />} />
           </Route>
           <Route path="/admin/*" element={<Admin />} />
+          <Route path="/admin-manage" element={<AdminManage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
