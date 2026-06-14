@@ -11,9 +11,10 @@ export async function createReservation(
     last_name: reservation.last_name,
     email: reservation.email,
     phone: reservation.phone,
-    reservation_date: reservation.reservation_date, // YYYY-MM-DD
-    reservation_time: ensureTimeFormat(reservation.reservation_time), // HH:mm:ss
+    reservation_date: reservation.reservation_date,
+    reservation_time: ensureTimeFormat(reservation.reservation_time),
     guests: Number(reservation.guests),
+    location_preference: reservation.location_preference ?? "indifferent",
     status: "pending" as const,
     notes: reservation.notes ?? null,
     table_id: null,
@@ -27,11 +28,9 @@ export async function createReservation(
   }
 }
 
-// Supabase time column expects HH:mm:ss — slot_time comes as "HH:mm:ss" from DB
-// but just in case frontend passes "HH:mm", we pad it.
 function ensureTimeFormat(t: string): string {
   if (!t) return "00:00:00";
   const parts = t.split(":");
   if (parts.length === 2) return `${parts[0]}:${parts[1]}:00`;
-  return t; // already HH:mm:ss
+  return t;
 }
