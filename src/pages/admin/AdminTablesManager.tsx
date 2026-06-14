@@ -1,0 +1,45 @@
+import { useMemo, useState } from "react";
+import { Edit3, Loader2, Plus, Save, Trash2, X } from "lucide-react";
+import { useAdminTables, useDeleteTable, useUpsertTable } from "@/hooks/useAdmin";
+import type { TableRestaurant } from "@/types/database";
+import { toast } from "@/components/ui/Toast";
+
+type TableLocation = "interieur" | "terrasse";
+type ManagedTable = TableRestaurant & { location?: TableLocation };
+type TableForm = Partial<ManagedTable> & { numero: number; capacite: number; location: TableLocation };
+
+const emptyTable: TableForm = { numero: 1, capacite: 2, position_x: 0, position_y: 0, active: true, location: "interieur" };
+const input = "w-full bg-void border border-pierre/15 px-4 py-3 text-sm text-creme outline-none focus:border-or/60";
+const label = "block text-[10px] uppercase tracking-[0.18em] text-pierre/45 mb-2";
+
+export default function AdminTablesManager() {
+  const { data, isLoading } = useAdminTables();
+  const save = useUpsertTable();
+  const del = useDeleteTable();
+  const [form, setForm] = useState<TableForm | null>(null);
+  const [filter, setFilter] = useState<"all" | TableLocation>("all");
+  const tables = (data ?? []) as ManagedTable[];
+  const filtered = useMemo(() => tables.filter((t) => filter === "all" || (t.location ?? "interieur") === filter), [tables, filter]);
+  const stats = useMemo(() => ({ total: tables.length, capacity: tables.reduce((s,t)=>s+Number(t.capacite ?? 0),0), inside: tables.filter(t=>(t.location ?? "interieur") === "interieur").length, terrace: tables.filter(t=>t.location === "terrasse").length }), [tables]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form || Number(form.numero) <= 0 || Number(form.capacite) <= 0) return toast("Numéro et capacité requis", "error");
+    try { await save.mutateAsync(form); toast("Table enregistrée", "success"); setForm(null); } catch { toast("Erreur lors de l’enregistrement", "error"); }
+  }
+  async function remove(t: ManagedTable) {
+    if (!confirm(`Supprimer la table ${t.numero} ?`)) return;
+    try { await del.mutateAsync(t.id); toast("Table supprimée", "success"); } catch { toast("Erreur suppression", "error"); }
+  }
+
+  return <div className="space-y-6">
+    <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+      <div><p className="text-or text-[10px] uppercase tracking-[0.28em] mb-2">Plan de salle</p><h2 className="font-display text-4xl text-creme">Tables</h2><p className="text-pierre/45 text-sm mt-2">Gérez les tables, la capacité, la salle intérieure et la terrasse.</p></div>
+      <button onClick={()=>setForm({...emptyTable})} className="inline-flex items-center justify-center gap-2 bg-or text-void px-6 py-3 text-xs uppercase tracking-[0.18em] font-medium hover:bg-or-light"><Plus size={15}/> Ajouter une table</button>
+    </div>
+    <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">{[["Tables",stats.total],["Couverts",stats.capacity],["Intérieur",stats.inside],["Terrasse",stats.terrace]].map(([k,v])=><div key={k} className="border border-pierre/10 bg-void-light p-4"><p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em]">{k}</p><p className="font-display text-3xl mt-2">{v}</p></div>)}</div>
+    <div className="flex flex-wrap gap-2">{[["all","Toutes"],["interieur","Intérieur"],["terrasse","Terrasse"]].map(([id,name])=><button key={id} onClick={()=>setFilter(id as typeof filter)} className={`px-4 py-2 border text-xs uppercase tracking-[0.14em] ${filter===id ? "border-or text-or bg-or/5" : "border-pierre/10 text-pierre/45 hover:text-creme"}`}>{name}</button>)}</div>
+    {form && <form onSubmit={submit} className="border border-or/20 bg-or/5 p-5 space-y-5"><div className="flex items-center justify-between"><div><h3 className="font-display text-2xl">{form.id ? `Modifier table ${form.numero}` : "Nouvelle table"}</h3><p className="text-pierre/45 text-sm">Remplissez les informations de capacité et d’emplacement.</p></div><button type="button" onClick={()=>setForm(null)} className="text-pierre/40 hover:text-creme"><X size={20}/></button></div><div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4"><div><label className={label}>Numéro de table</label><input className={input} type="number" value={form.numero} onChange={e=>setForm({...form, numero:Number(e.target.value)})}/></div><div><label className={label}>Nombre de personnes</label><input className={input} type="number" value={form.capacite} onChange={e=>setForm({...form, capacite:Number(e.target.value)})}/></div><div><label className={label}>Emplacement</label><select className={input} value={form.location ?? "interieur"} onChange={e=>setForm({...form, location:e.target.value as TableLocation})}><option value="interieur">Intérieur</option><option value="terrasse">Terrasse</option></select></div><div><label className={label}>Position X</label><input className={input} type="number" value={form.position_x ?? 0} onChange={e=>setForm({...form, position_x:Number(e.target.value)})}/></div><div><label className={label}>Position Y</label><input className={input} type="number" value={form.position_y ?? 0} onChange={e=>setForm({...form, position_y:Number(e.target.value)})}/></div><label className="flex items-center gap-3 border border-pierre/10 bg-void px-4 py-3 text-sm text-pierre/70"><input type="checkbox" checked={form.active !== false} onChange={e=>setForm({...form, active:e.target.checked})}/> Table active</label></div><button className="w-full bg-or text-void py-3 text-xs uppercase tracking-[0.18em] font-medium flex items-center justify-center gap-2"><Save size={15}/> Enregistrer la table</button></form>}
+    {isLoading ? <div className="py-16 flex justify-center"><Loader2 className="animate-spin text-or"/></div> : <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">{filtered.map(t=><div key={t.id} className={`border p-5 bg-void-light ${t.active===false ? "border-red-500/20 opacity-60" : "border-pierre/10"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-pierre/35 text-[10px] uppercase tracking-[0.18em]">{(t.location ?? "interieur") === "terrasse" ? "Terrasse" : "Intérieur"}</p><h3 className="font-display text-3xl mt-1">Table {t.numero}</h3></div><span className={`text-[10px] uppercase tracking-[0.14em] px-2 py-1 border ${t.active===false ? "border-red-500/30 text-red-400" : "border-emerald-500/30 text-emerald-400"}`}>{t.active===false ? "Inactive" : "Active"}</span></div><p className="text-pierre/60 mt-4">{t.capacite} couvert{Number(t.capacite)>1 ? "s" : ""}</p><p className="text-pierre/30 text-xs mt-1">Position x:{t.position_x ?? 0} · y:{t.position_y ?? 0}</p><div className="flex gap-2 mt-5"><button onClick={()=>setForm({ ...t, location: t.location ?? "interieur" })} className="flex-1 border border-pierre/10 py-3 text-xs uppercase tracking-[0.14em] text-pierre/70 hover:text-or hover:border-or/40"><Edit3 size={13} className="inline mr-2"/>Modifier</button><button onClick={()=>remove(t)} className="px-4 border border-red-500/20 text-red-400 hover:bg-red-500/10"><Trash2 size={15}/></button></div></div>)}</div>}
+  </div>;
+}
