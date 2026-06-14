@@ -6,6 +6,8 @@
 export type UserRole = "admin" | "manager" | "staff";
 export type ReservationStatus = "pending" | "confirmed" | "seated" | "cancelled" | "no_show";
 export type MenuCategory = "entrees" | "plats" | "desserts" | "vins" | "cocktails";
+export type TableLocation = "interieur" | "terrasse";
+export type ReservationLocationPreference = TableLocation | "indifferent";
 
 export interface Profile {
   id: string;
@@ -22,6 +24,7 @@ export interface TableRestaurant {
   position_x: number;
   position_y: number;
   active: boolean;
+  location: TableLocation;
   created_at: string;
 }
 
@@ -48,6 +51,7 @@ export interface Reservation {
   reservation_date: string;
   reservation_time: string;
   guests: number;
+  location_preference: ReservationLocationPreference;
   status: ReservationStatus;
   notes: string | null;
   table_id: string | null;
@@ -63,6 +67,7 @@ export interface ReservationInsert {
   reservation_date: string;
   reservation_time: string;
   guests: number;
+  location_preference?: ReservationLocationPreference;
   notes?: string;
 }
 
