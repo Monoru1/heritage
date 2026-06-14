@@ -63,18 +63,23 @@ export async function deleteMenuItem(id: string) {
 }
 
 // ---- Tables CRUD ----
-export async function fetchAllTables(): Promise<TableRestaurant[]> {
+export type ManagedTable = TableRestaurant & { location?: "interieur" | "terrasse" };
+export type ManagedTableInput = Partial<ManagedTable> & {
+  numero: number;
+  capacite: number;
+  location?: "interieur" | "terrasse";
+};
+
+export async function fetchAllTables(): Promise<ManagedTable[]> {
   const { data, error } = await supabase
     .from("tables_restaurant")
     .select("*")
     .order("numero");
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as ManagedTable[];
 }
 
-export async function upsertTable(
-  table: Partial<TableRestaurant> & { numero: number; capacite: number }
-) {
+export async function upsertTable(table: ManagedTableInput) {
   const payload = {
     ...table,
     numero: Number(table.numero),
@@ -82,6 +87,7 @@ export async function upsertTable(
     position_x: Number(table.position_x ?? 0),
     position_y: Number(table.position_y ?? 0),
     active: table.active ?? true,
+    location: table.location ?? "interieur",
   };
 
   const { error } = table.id
