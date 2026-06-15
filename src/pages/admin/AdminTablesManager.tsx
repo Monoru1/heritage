@@ -19,30 +19,51 @@ export default function AdminTablesManager() {
   const save = useUpsertTable();
   const del  = useDeleteTable();
 
-  const [form, setForm]       = useState<TableForm | null>(null);
+  const [form, setForm]           = useState<TableForm | null>(null);
   const [locFilter, setLocFilter] = useState<"all" | TableLocation>("all");
 
-  // Filter by date+time to show real occupation
-  const today    = new Date().toISOString().slice(0, 10);
-  const [snapDate, setSnapDate] = useState(today);
-  const [snapTime, setSnapTime] = useState(""); // empty = no time filter
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Default to the next date that has an active reservation (not today if nothing today)
+  const nextResaDate = useMemo(() => {
+    const dates = (resas ?? [])
+      .filter((r) => !["cancelled", "no_show"].includes(r.status) && r.table_id)
+      .map((r) => r.reservation_date)
+      .sort();
+    // Prefer future or today
+    return dates.find((d) => d >= today) ?? today;
+  }, [resas, today]);
+
+  const [snapDate, setSnapDate] = useState<string>(() => nextResaDate ?? today);
+  const [snapTime, setSnapTime] = useState("");
+
+  // Keep snapDate in sync with nextResaDate on first load
+  const effectiveDate = snapDate;
 
   const tables = (data ?? []) as ManagedTable[];
 
   // Tables occupied at the selected date+time
   const busyTableIds = useMemo(() => {
-    if (!snapDate) return new Set<string>();
+    if (!effectiveDate) return new Set<string>();
     return new Set(
       (resas ?? [])
         .filter((r) =>
-          r.reservation_date === snapDate
+          r.reservation_date === effectiveDate
           && (!snapTime || r.reservation_time.slice(0, 5) === snapTime)
           && !["cancelled", "no_show"].includes(r.status)
           && r.table_id
         )
         .map((r) => r.table_id as string)
     );
-  }, [resas, snapDate, snapTime]);
+  }, [resas, effectiveDate, snapTime]);
+
+  // All reservations on the selected date (for the summary line)
+  const resasOnDate = useMemo(() =>
+    (resas ?? []).filter(
+      (r) => r.reservation_date === effectiveDate && !["cancelled", "no_show"].includes(r.status)
+    ),
+    [resas, effectiveDate]
+  );
 
   const filtered = useMemo(() =>
     tables.filter((t) => locFilter === "all" || (t.location ?? "interieur") === locFilter),
@@ -93,7 +114,7 @@ export default function AdminTablesManager() {
           <p className="text-or text-[10px] uppercase tracking-[0.28em] mb-2">Tables</p>
           <h2 className="font-display text-4xl text-creme">Gestion des tables</h2>
           <p className="text-pierre/45 text-sm mt-2">
-            Gérez les tables, le nombre de personnes, la salle intérieure et la terrasse.
+            Gérez les tables et visualisez leur occupation par créneau.
           </p>
         </div>
         <button onClick={() => setForm({ ...emptyTable })}
@@ -112,7 +133,7 @@ export default function AdminTablesManager() {
         ))}
       </div>
 
-      {/* Info banner if all tables have same location (likely not configured) */}
+      {/* Info banner if no terrasse configured */}
       {stats.terrace === 0 && stats.total > 0 && (
         <div className="border border-or/20 bg-or/5 px-4 py-3 flex items-start gap-3 text-sm">
           <span className="text-or shrink-0 mt-0.5">ℹ</span>
@@ -128,11 +149,13 @@ export default function AdminTablesManager() {
         <p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em] mb-1">
           Voir l'occupation à un créneau précis
         </p>
-        <p className="text-pierre/30 text-xs mb-3">Sélectionnez une date (et optionnellement une heure) pour voir quelles tables sont réservées.</p>
+        <p className="text-pierre/30 text-xs mb-4">
+          Les badges <span className="text-orange-400">Réservée</span> / <span className="text-emerald-400">Libre</span> se mettent à jour selon la date et l'heure choisies.
+        </p>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <label className={lbl}>Date</label>
-            <input type="date" value={snapDate} onChange={(e) => setSnapDate(e.target.value)}
+            <input type="date" value={effectiveDate} onChange={(e) => setSnapDate(e.target.value)}
               className="bg-void border border-pierre/15 px-3 py-2 text-sm text-creme outline-none focus:border-or/60 w-44" />
           </div>
           <div>
@@ -143,14 +166,28 @@ export default function AdminTablesManager() {
           {snapTime && (
             <button onClick={() => setSnapTime("")}
               className="text-pierre/40 hover:text-creme text-xs uppercase tracking-wider border border-pierre/15 px-3 py-2">
-              Effacer l'heure
+              Toute la journée
             </button>
           )}
-          <p className="text-pierre/35 text-xs self-end pb-2">
-            {busyTableIds.size > 0
-              ? `${busyTableIds.size} table${busyTableIds.size > 1 ? "s" : ""} réservée${busyTableIds.size > 1 ? "s" : ""}`
-              : "Aucune réservation sur ce créneau"}
-          </p>
+        </div>
+
+        {/* Summary for the selected date */}
+        <div className="mt-3 pt-3 border-t border-pierre/10">
+          {resasOnDate.length === 0 ? (
+            <p className="text-pierre/30 text-xs">Aucune réservation le {new Date(effectiveDate + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}.</p>
+          ) : (
+            <div className="flex flex-wrap gap-4 text-xs">
+              <span className="text-pierre/50">
+                {new Date(effectiveDate + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} —
+              </span>
+              <span className="text-orange-400 font-medium">
+                {busyTableIds.size} table{busyTableIds.size > 1 ? "s" : ""} réservée{busyTableIds.size > 1 ? "s" : ""}
+              </span>
+              <span className="text-pierre/40">
+                {resasOnDate.length} réservation{resasOnDate.length > 1 ? "s" : ""} au total
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -214,20 +251,25 @@ export default function AdminTablesManager() {
       {isLoading ? (
         <div className="py-16 flex justify-center"><Loader2 className="animate-spin text-or" /></div>
       ) : filtered.length === 0 ? (
-        <div className="border border-pierre/10 bg-void-light p-10 text-center text-pierre/40">
-          Aucune table trouvée.
-        </div>
+        <div className="border border-pierre/10 bg-void-light p-10 text-center text-pierre/40">Aucune table trouvée.</div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {filtered.map((t) => {
             const status = tableStatus(t);
             const badge  = statusBadge[status];
+            // Find reservation on this table for the selected date
+            const resa = (resas ?? []).find(
+              (r) => r.table_id === t.id
+                && r.reservation_date === effectiveDate
+                && (!snapTime || r.reservation_time.slice(0, 5) === snapTime)
+                && !["cancelled", "no_show"].includes(r.status)
+            );
             return (
               <div key={t.id}
                 className={cn("border p-5 bg-void-light transition-colors",
                   status === "inactive" ? "border-red-500/15 opacity-60"
-                  : status === "busy"    ? "border-orange-500/20"
-                  :                        "border-pierre/10"
+                  : status === "busy"   ? "border-orange-500/25 bg-orange-500/3"
+                  :                       "border-pierre/10"
                 )}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -240,17 +282,23 @@ export default function AdminTablesManager() {
                     {badge.label}
                   </span>
                 </div>
-                <p className="text-pierre/60 mt-4">
+                <p className="text-pierre/60 mt-3">
                   {t.capacite} personne{Number(t.capacite) > 1 ? "s" : ""}
                 </p>
-                {status === "busy" && snapTime && (
-                  <p className="text-orange-400/70 text-xs mt-2">
-                    Réservée à {formatTime(snapTime)}
-                  </p>
+                {/* Show who reserved this table */}
+                {status === "busy" && resa && (
+                  <div className="mt-3 pt-3 border-t border-orange-500/15 text-xs space-y-0.5">
+                    <p className="text-orange-300/80 font-medium">
+                      {resa.first_name} {resa.last_name}
+                    </p>
+                    <p className="text-pierre/40">
+                      {formatTime(resa.reservation_time)} · {resa.guests} personne{resa.guests > 1 ? "s" : ""}
+                    </p>
+                  </div>
                 )}
-                <div className="flex gap-2 mt-5">
+                <div className="flex gap-2 mt-4">
                   <button onClick={() => setForm({ ...t, location: t.location ?? "interieur" })}
-                    className="flex-1 border border-pierre/10 py-3 text-xs uppercase tracking-[0.14em] text-pierre/70 hover:text-or hover:border-or/40">
+                    className="flex-1 border border-pierre/10 py-2.5 text-xs uppercase tracking-[0.14em] text-pierre/70 hover:text-or hover:border-or/40">
                     <Edit3 size={13} className="inline mr-2" />Modifier
                   </button>
                   <button onClick={() => remove(t)}
