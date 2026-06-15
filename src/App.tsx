@@ -13,11 +13,7 @@ const Admin       = lazy(() => import("@/pages/AdminManage"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return null;
 }
 
@@ -36,7 +32,7 @@ function NotFound() {
         <p className="text-or text-xs tracking-[0.35em] uppercase mb-5">Erreur 404</p>
         <h1 className="font-display text-5xl md:text-7xl mb-6">Page introuvable</h1>
         <p className="text-pierre/60 leading-relaxed mb-10">
-          Cette adresse n’existe pas encore dans la maison Héritage. Revenez à l’accueil ou réservez votre table.
+          Cette adresse n'existe pas encore dans la maison Héritage. Revenez à l'accueil ou réservez votre table.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link to="/" className="px-7 py-3 border border-pierre/20 text-creme uppercase tracking-[0.18em] text-xs hover:border-or hover:text-or transition-colors">
@@ -67,7 +63,9 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="/admin/*" element={<Admin />} />
+          {/* Admin: toutes les sous-routes passent par AdminManage qui lit l'URL */}
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/:section" element={<Admin />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
