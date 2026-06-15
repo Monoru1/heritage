@@ -5,7 +5,7 @@ const TERROIR_ITEMS = [
     title: "Huile d'olive AOP",
     origin: "Vallée des Baux-de-Provence",
     description: "Pressée à froid dans les 4h suivant la cueillette.",
-    image: "https://images.unsplash.com/photo-1474979266404-7f28db35cdb4?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80",
   },
   {
     title: "Sel de Camargue",
