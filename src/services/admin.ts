@@ -51,6 +51,20 @@ async function confirmReservationAndAssignTable(id: string) {
 
   const { error } = await supabase.from("reservations").update({ status: "confirmed", table_id: selected.id }).eq("id", id);
   if (error) throw error;
+
+  // Decrement available_tables so the public page reflects real availability
+  const { data: slotData } = await supabase
+    .from("availability_slots")
+    .select("id, available_tables")
+    .eq("slot_date", reservation.reservation_date)
+    .eq("slot_time", time)
+    .single();
+  if (slotData && slotData.available_tables > 0) {
+    await supabase
+      .from("availability_slots")
+      .update({ available_tables: slotData.available_tables - 1 })
+      .eq("id", slotData.id);
+  }
 }
 
 export async function fetchAllMenuItems(): Promise<MenuItem[]> {
