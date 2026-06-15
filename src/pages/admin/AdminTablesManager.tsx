@@ -103,7 +103,7 @@ export default function AdminTablesManager() {
       </div>
 
       {/* KPIs */}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {([["Tables", stats.total], ["Personnes max", stats.capacity], ["Intérieur", stats.inside], ["Terrasse", stats.terrace]] as const).map(([k, v]) => (
           <div key={k} className="border border-pierre/10 bg-void-light p-4">
             <p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em]">{k}</p>
@@ -112,11 +112,23 @@ export default function AdminTablesManager() {
         ))}
       </div>
 
+      {/* Info banner if all tables have same location (likely not configured) */}
+      {stats.terrace === 0 && stats.total > 0 && (
+        <div className="border border-or/20 bg-or/5 px-4 py-3 flex items-start gap-3 text-sm">
+          <span className="text-or shrink-0 mt-0.5">ℹ</span>
+          <span className="text-pierre/70">
+            Toutes vos tables sont en <strong className="text-creme">Intérieur</strong>.
+            Pour définir des tables en <strong className="text-creme">Terrasse</strong>, cliquez <strong className="text-creme">Modifier</strong> sur une table et changez l'emplacement.
+          </span>
+        </div>
+      )}
+
       {/* Date+time snapshot filter */}
       <div className="border border-pierre/10 bg-void-light p-4">
-        <p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em] mb-3">
+        <p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em] mb-1">
           Voir l'occupation à un créneau précis
         </p>
+        <p className="text-pierre/30 text-xs mb-3">Sélectionnez une date (et optionnellement une heure) pour voir quelles tables sont réservées.</p>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <label className={lbl}>Date</label>

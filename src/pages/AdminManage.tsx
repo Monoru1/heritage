@@ -129,7 +129,7 @@ function ReservationsVisual() {
       </div>
 
       {/* KPIs */}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {([["Total", stats.total], ["Aujourd'hui", stats.today], ["En attente", stats.pending], ["Personnes", stats.guests]] as const).map(([k, v]) => (
           <div key={k} className="border border-pierre/10 bg-void-light p-4">
             <p className="text-pierre/40 text-[10px] uppercase tracking-[0.18em]">{k}</p>
@@ -344,7 +344,7 @@ export default function AdminManage() {
 
       {/* Content */}
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
-        <section className="min-w-0 overflow-hidden border border-pierre/10 bg-black/15 p-4 sm:p-6">
+        <section className="min-w-0 border border-pierre/10 bg-black/15 p-4 sm:p-6">
           {section === "reservations" && <ReservationsVisual />}
           {isCrud && (
             <AdminCrud
